@@ -13,7 +13,7 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
   </style>
-<script src="/_aistudio-iframe.js?v=2f1c016a"></script></head>
+</head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
   <!-- Toast Container -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
@@ -47,12 +47,12 @@
       <div class="flex items-start sm:items-center gap-2.5">
         <span class="text-base">ℹ️</span>
         <div>
-          <span class="font-semibold">Otomatik Kural Uygulandı:</span>
-          <span>Kalan Gün = Mevcut Stok / Günlük Satış Hızı. Kalan Gün &le; Tedarik Süresi olan ürünler <strong>Kritik Eşik</strong> olarak işaretlenir.</span>
+          <span class="font-semibold">İş Kuralı:</span>
+          <span>Kalan Gün = Mevcut Stok / Günlük Satış Hızı. Kalan Gün &le; Tedarik Süresi olan ürünler <strong>Kritik Eşik</strong> olarak önceliklendirilir.</span>
         </div>
       </div>
       <div id="excluded-badge" class="shrink-0 bg-white/80 px-2.5 py-1 rounded-md border border-blue-200 font-medium text-slate-600">
-        2 adet ürün kural gereği (0 Stok / 0 Satış) elendi
+        Hesaplanıyor...
       </div>
     </div>
 
@@ -89,14 +89,14 @@
       <!-- Toplam Aktif Takip -->
       <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between">
-          <p class="text-xs font-semibold uppercase tracking-wider text-slate-600">Toplam Aktif Takip Edilen Ürün</p>
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-600">Toplam Aktif Takip Edilen</p>
           <span class="text-lg">📊</span>
         </div>
         <div class="mt-3 flex items-baseline gap-2">
           <h2 id="kpi-total" class="text-3xl font-extrabold text-slate-900">0</h2>
-          <span class="text-xs text-slate-500">aktif listelenen</span>
+          <span class="text-xs text-slate-500">aktif ürün</span>
         </div>
-        <p class="mt-1 text-xs text-slate-500">Stok > 0 ve Günlük Satış > 0 olan geçerli ürünler</p>
+        <p class="mt-1 text-xs text-slate-500">Stok > 0 ve Günlük Satış > 0 olan geçerli kayıtlar</p>
         <div class="absolute bottom-0 left-0 right-0 h-1 bg-blue-600"></div>
       </div>
     </section>
@@ -159,15 +159,16 @@
               <th class="py-3.5 px-4">Ürün Adı</th>
               <th class="py-3.5 px-4">Kategori</th>
               <th class="py-3.5 px-4 text-right">Mevcut Stok</th>
-              <th class="py-3.5 px-4 text-right">Günlük Satış Hızı</th>
+              <th class="py-3.5 px-4 text-right">Günlük Satış</th>
               <th class="py-3.5 px-4 text-right">Tedarik Süresi</th>
-              <th class="py-3.5 px-4 text-right">Tahmini Kalan Süre</th>
+              <th class="py-3.5 px-4 text-right">Tahmini Kalan</th>
+              <th class="py-3.5 px-4 text-center">Önerilen Sipariş</th>
               <th class="py-3.5 px-4 text-center">Durum</th>
               <th class="py-3.5 px-4 text-center">Aksiyon</th>
             </tr>
           </thead>
           <tbody id="product-table-body" class="divide-y divide-slate-200">
-            <!-- Dinamik olarak JS ile basılacak -->
+            <!-- Dinamik JS -->
           </tbody>
         </table>
       </div>
@@ -184,9 +185,7 @@
     </section>
   </main>
 
-  <!-- JavaScript Mantığı -->
   <script>
-    // 2. Veri Modeli: En az 8-10 adet örnek ürün (SKU, ad, kategori, mevcut stok, günlük ortalama satış, tedarik süresi)
     const rawProducts = [
       { sku: 'ELK-8421', name: 'Kablosuz Ergonomik Mouse M30', category: 'Elektronik', currentStock: 18, dailyAvgSales: 6.5, leadTimeDays: 4 },
       { sku: 'ELK-9014', name: 'Type-C Hızlı Şarj Adaptörü 65W', category: 'Elektronik', currentStock: 12, dailyAvgSales: 4.0, leadTimeDays: 5 },
@@ -195,48 +194,48 @@
       { sku: 'ELK-4429', name: 'Mekanik Klavye RGB - Red Switch', category: 'Elektronik', currentStock: 35, dailyAvgSales: 2.2, leadTimeDays: 10 },
       { sku: 'EV-7721', name: 'Termo Paslanmaz Çelik Matara 750ml', category: 'Ev & Yaşam', currentStock: 9, dailyAvgSales: 3.0, leadTimeDays: 5 },
       { sku: 'GYM-5520', name: 'Dri-Fit Spor Tişört - Nefes Alabilir', category: 'Giyim & Spor', currentStock: 28, dailyAvgSales: 2.0, leadTimeDays: 6 },
-      { sku: 'OFS-6634', name: 'Jel Mürekkepli Roller İmza Kalemi 0.5mm', category: 'Ofis & Kırtasiye', currentStock: 80, dailyAvgSales: 4.2, leadTimeDays: 7 },
+      { sku: 'OFS-6634', name: 'Jel Mürekkepli Roller İmza Kalemi', category: 'Ofis & Kırtasiye', currentStock: 80, dailyAvgSales: 4.2, leadTimeDays: 7 },
       { sku: 'GDA-2291', name: 'Doğal Soğuk Sıkım Zeytinyağı 5L', category: 'Gıda & İçecek', currentStock: 8, dailyAvgSales: 2.5, leadTimeDays: 4 },
       { sku: 'EV-8840', name: 'Akıllı Nemlendirici & Aroma Difüzörü', category: 'Ev & Yaşam', currentStock: 6, dailyAvgSales: 1.8, leadTimeDays: 7 },
       { sku: 'ELK-1050', name: 'Bluetooth Kulak İçi Kulaklık ANC', category: 'Elektronik', currentStock: 52, dailyAvgSales: 3.2, leadTimeDays: 8 },
-      // KURAL 3: Mevcut stoğu 0 olan veya günlük ortalama satışı 0 olan ürünler KESİNLİKLE dahil edilmemelidir.
-      // Bu 2 örnek ürün kural gereği iş mantığı filtresiyle KESİNLİKLE listeye dahil edilmeyecektir:
-      { sku: 'PAS-0001', name: 'Stoksuz Test Ürünü (Dahil Edilmez)', category: 'Elektronik', currentStock: 0, dailyAvgSales: 4.0, leadTimeDays: 5 },
-      { sku: 'PAS-0002', name: 'Hareketsiz Test Ürünü (Dahil Edilmez)', category: 'Ev & Yaşam', currentStock: 20, dailyAvgSales: 0, leadTimeDays: 6 }
+      // Kural gereği elenecek ürünler:
+      { sku: 'PAS-0001', name: 'Stoksuz Test Ürünü (Elenmeli)', category: 'Elektronik', currentStock: 0, dailyAvgSales: 4.0, leadTimeDays: 5 },
+      { sku: 'PAS-0002', name: 'Hareketsiz Test Ürünü (Elenmeli)', category: 'Ev & Yaşam', currentStock: 20, dailyAvgSales: 0, leadTimeDays: 6 }
     ];
 
-    // 3. Filtreleme Mantığı (Kritik): Mevcut stoğu 0 olan veya günlük satışı 0 olan ürünler KESİNLİKLE hariç tutulur.
+    // Filtreleme: Stok > 0 ve Günlük Satış > 0
     const activeProducts = rawProducts.filter(item => item.currentStock > 0 && item.dailyAvgSales > 0);
+    const excludedCount = rawProducts.length - activeProducts.length;
+    document.getElementById('excluded-badge').textContent = `${excludedCount} adet ürün kural gereği (0 Stok / 0 Satış) elendi`;
 
-    // 4 & 5. Hesaplama Formülü ve Kritik Eşik Tespiti
+    // Hesaplama ve Eşik Belirleme
     const processedProducts = activeProducts.map(item => {
-      // Formül: Kalan Gün = Mevcut Stok / Günlük Ortalama Satış (1 basamak yuvarlama)
       const exactDays = item.currentStock / item.dailyAvgSales;
       const remainingDays = Math.round(exactDays * 10) / 10;
-      
-      // Eşik: Kalan Gün <= Tedarik Süresi ise KRİTİK, aksi halde GÜVENLİ
       const isCritical = remainingDays <= item.leadTimeDays;
-      const status = isCritical ? '🔴 KRİTİK (Sipariş Ver)' : '🟢 GÜVENLİ';
+      const status = isCritical ? '🔴 KRİTİK' : '🟢 GÜVENLİ';
+      
+      // Güvenlik Stoğu Mantığı: Tedarik süresinin 2 katını karşılayacak önerilen adet
+      const suggestedOrderQty = Math.ceil(item.dailyAvgSales * item.leadTimeDays * 2);
 
       return {
         ...item,
         remainingDays,
         isCritical,
-        status
+        status,
+        suggestedOrderQty
       };
     });
 
-    // 6. Sıralama: Varsayılan olarak "Kalan Gün" değerine göre küçükten büyüğe (ASC) sıralama
+    // Sıralama (ASC)
     processedProducts.sort((a, b) => a.remainingDays - b.remainingDays);
 
-    // Filtre State
     let state = {
       searchQuery: '',
       selectedCategory: 'ALL',
       onlyUrgent: false
     };
 
-    // DOM Elementleri
     const tableBody = document.getElementById('product-table-body');
     const searchInput = document.getElementById('search-input');
     const categorySelect = document.getElementById('category-select');
@@ -250,7 +249,6 @@
     const resetFiltersBtn = document.getElementById('reset-filters-btn');
     const toastContainer = document.getElementById('toast-container');
 
-    // Kategorileri Doldur
     const categories = Array.from(new Set(processedProducts.map(p => p.category))).sort();
     categories.forEach(cat => {
       const opt = document.createElement('option');
@@ -259,7 +257,6 @@
       categorySelect.appendChild(opt);
     });
 
-    // KPI Güncellemesi
     function updateKPIs() {
       const criticalCount = processedProducts.filter(p => p.isCritical).length;
       const safeCount = processedProducts.filter(p => !p.isCritical).length;
@@ -271,7 +268,6 @@
       urgentChip.textContent = criticalCount;
     }
 
-    // Toast Bildirimi
     function showToast(product) {
       const toast = document.createElement('div');
       toast.className = 'pointer-events-auto bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center justify-between gap-4 max-w-sm transition transform translate-y-2 opacity-0';
@@ -279,28 +275,25 @@
         <div class="flex items-center gap-3">
           <span class="text-xl">🛒</span>
           <div>
-            <p class="text-xs font-semibold text-amber-400">Sipariş Talebi Gönderildi</p>
+            <p class="text-xs font-semibold text-amber-400">Sipariş Talebi Oluşturuldu</p>
             <p class="text-xs text-slate-200 font-medium">${product.name} (${product.sku})</p>
-            <p class="text-[11px] text-slate-400">Tedarikçi siparişi başarıyla oluşturuldu.</p>
+            <p class="text-[11px] text-slate-400">Önerilen Miktar: <strong>${product.suggestedOrderQty} Adet</strong></p>
           </div>
         </div>
         <button class="text-slate-400 hover:text-white text-sm font-bold ml-2" onclick="this.parentElement.remove()">&times;</button>
       `;
       toastContainer.appendChild(toast);
 
-      // Animation in
       requestAnimationFrame(() => {
         toast.classList.remove('translate-y-2', 'opacity-0');
       });
 
-      // Auto dismiss after 4 seconds
       setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-2');
         setTimeout(() => toast.remove(), 300);
       }, 4000);
     }
 
-    // Tabloyu Çizme
     function renderTable() {
       const q = state.searchQuery.toLowerCase().trim();
       
@@ -322,14 +315,10 @@
 
       filtered.forEach(item => {
         const tr = document.createElement('tr');
-        
-        // 5. Kritik Eşik (Threshold) Görsel Vurgusu:
-        // Kalan Gün <= Tedarik Süresi ise satır hafif kırmızımsı vurgulu.
-        // Kalan Gün > Tedarik Süresi ise satır standart/yeşilimsi vurgulu.
         if (item.isCritical) {
           tr.className = 'bg-red-50/60 hover:bg-red-100/50 border-l-4 border-l-red-500 transition-colors duration-150';
         } else {
-          tr.className = 'bg-emerald-50/30 hover:bg-emerald-100/40 border-l-4 border-l-emerald-500 transition-colors duration-150';
+          tr.className = 'bg-white hover:bg-slate-50/80 border-l-4 border-l-emerald-500 transition-colors duration-150';
         }
 
         tr.innerHTML = `
@@ -349,6 +338,9 @@
             }">
               ${item.remainingDays.toFixed(1)} gün
             </span>
+          </td>
+          <td class="py-3.5 px-4 text-center font-bold text-slate-700 text-xs">
+            ${item.isCritical ? `<span class="text-amber-600 font-semibold">+${item.suggestedOrderQty} adet</span>` : '-'}
           </td>
           <td class="py-3.5 px-4 text-center">
             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
@@ -374,7 +366,6 @@
         tableBody.appendChild(tr);
       });
 
-      // Event delegation for action buttons
       document.querySelectorAll('.action-order-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const sku = e.target.getAttribute('data-sku');
@@ -386,7 +377,6 @@
       });
     }
 
-    // Event Listener'lar
     searchInput.addEventListener('input', (e) => {
       state.searchQuery = e.target.value;
       renderTable();
@@ -412,7 +402,6 @@
       renderTable();
     });
 
-    // Başlangıç Çalıştırması
     updateKPIs();
     renderTable();
   </script>
