@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mağaza Stok Uyarı Paneli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+  </style>
+<script src="/_aistudio-iframe.js?v=2f1c016a"></script></head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xl border border-amber-500/20">
+          📦
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">Mağaza Stok Uyarı Paneli</h1>
+          <p class="text-xs text-slate-500">Tedarik Süresi & Kritik Stok Eşiği Analiz Sistemi</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Canlı Takip Aktif
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- Kural ve İş Mantığı Bilgilendirme Çubuğu -->
+    <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-blue-800">
+      <div class="flex items-start sm:items-center gap-2.5">
+        <span class="text-base">ℹ️</span>
+        <div>
+          <span class="font-semibold">Otomatik Kural Uygulandı:</span>
+          <span>Kalan Gün = Mevcut Stok / Günlük Satış Hızı. Kalan Gün &le; Tedarik Süresi olan ürünler <strong>Kritik Eşik</strong> olarak işaretlenir.</span>
+        </div>
+      </div>
+      <div id="excluded-badge" class="shrink-0 bg-white/80 px-2.5 py-1 rounded-md border border-blue-200 font-medium text-slate-600">
+        2 adet ürün kural gereği (0 Stok / 0 Satış) elendi
+      </div>
+    </div>
+
+    <!-- KPI Kartları -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <!-- Kritik Kartı -->
+      <div class="bg-white rounded-2xl p-5 border border-red-200 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-semibold uppercase tracking-wider text-red-600">Acil Sipariş Gereken</p>
+          <span class="text-lg">🔴</span>
+        </div>
+        <div class="mt-3 flex items-baseline gap-2">
+          <h2 id="kpi-critical" class="text-3xl font-extrabold text-red-600">0</h2>
+          <span class="text-xs text-slate-500">adet kritik ürün</span>
+        </div>
+        <p class="mt-1 text-xs text-slate-500">Tedarik süresinden daha az stok ömrü kalanlar</p>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-red-500"></div>
+      </div>
+
+      <!-- Güvenli Kartı -->
+      <div class="bg-white rounded-2xl p-5 border border-emerald-200 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">Güvenli Ürün Sayısı</p>
+          <span class="text-lg">🟢</span>
+        </div>
+        <div class="mt-3 flex items-baseline gap-2">
+          <h2 id="kpi-safe" class="text-3xl font-extrabold text-emerald-600">0</h2>
+          <span class="text-xs text-slate-500">adet güvenli ürün</span>
+        </div>
+        <p class="mt-1 text-xs text-slate-500">Tedarik süresinin üzerinde stok rezervi olanlar</p>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
+      </div>
+
+      <!-- Toplam Aktif Takip -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-600">Toplam Aktif Takip Edilen Ürün</p>
+          <span class="text-lg">📊</span>
+        </div>
+        <div class="mt-3 flex items-baseline gap-2">
+          <h2 id="kpi-total" class="text-3xl font-extrabold text-slate-900">0</h2>
+          <span class="text-xs text-slate-500">aktif listelenen</span>
+        </div>
+        <p class="mt-1 text-xs text-slate-500">Stok > 0 ve Günlük Satış > 0 olan geçerli ürünler</p>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-blue-600"></div>
+      </div>
+    </section>
+
+    <!-- Filtreleme & Arama Çubuğu -->
+    <section class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+      <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <!-- Arama Kutusu -->
+        <div class="relative flex-1">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">🔍</span>
+          <input
+            id="search-input"
+            type="text"
+            placeholder="Ürün adı veya SKU koduna göre ara..."
+            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+          />
+        </div>
+
+        <!-- Kategori Dropdown -->
+        <div class="w-full md:w-56">
+          <select
+            id="category-select"
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition text-slate-700"
+          >
+            <option value="ALL">Tüm Kategoriler</option>
+          </select>
+        </div>
+
+        <!-- Sadece Acil Olanları Göster Toggle Switch -->
+        <div class="flex items-center gap-3 shrink-0 bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl">
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="urgent-filter-toggle" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+          </label>
+          <span class="text-sm font-medium text-slate-700 select-none flex items-center gap-1.5">
+            <span>Sadece Acil Olanlar</span>
+            <span id="urgent-count-chip" class="px-1.5 py-0.5 text-xs font-bold bg-red-100 text-red-700 rounded-full">0</span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tablo Alanı -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <span>Envanter ve Tedarik Durum Tablosu</span>
+          <span id="table-badge-count" class="text-xs font-normal text-slate-500">(0 ürün)</span>
+        </h3>
+        <span class="text-xs text-slate-500">
+          Varsayılan Sıralama: <strong>Kalan Gün (ASC)</strong>
+        </span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-100/70 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+              <th class="py-3.5 px-4">SKU</th>
+              <th class="py-3.5 px-4">Ürün Adı</th>
+              <th class="py-3.5 px-4">Kategori</th>
+              <th class="py-3.5 px-4 text-right">Mevcut Stok</th>
+              <th class="py-3.5 px-4 text-right">Günlük Satış Hızı</th>
+              <th class="py-3.5 px-4 text-right">Tedarik Süresi</th>
+              <th class="py-3.5 px-4 text-right">Tahmini Kalan Süre</th>
+              <th class="py-3.5 px-4 text-center">Durum</th>
+              <th class="py-3.5 px-4 text-center">Aksiyon</th>
+            </tr>
+          </thead>
+          <tbody id="product-table-body" class="divide-y divide-slate-200">
+            <!-- Dinamik olarak JS ile basılacak -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Boş Durum (Empty State) -->
+      <div id="empty-state" class="hidden py-12 px-4 text-center">
+        <div class="text-4xl mb-3">🔍</div>
+        <h4 class="text-base font-semibold text-slate-800">Eşleşen ürün bulunamadı</h4>
+        <p class="text-xs text-slate-500 mt-1">Arama kriterlerinizi veya filtrelerinizi sıfırlamayı deneyin.</p>
+        <button id="reset-filters-btn" class="mt-4 px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+          Filtreleri Temizle
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- JavaScript Mantığı -->
+  <script>
+    // 2. Veri Modeli: En az 8-10 adet örnek ürün (SKU, ad, kategori, mevcut stok, günlük ortalama satış, tedarik süresi)
+    const rawProducts = [
+      { sku: 'ELK-8421', name: 'Kablosuz Ergonomik Mouse M30', category: 'Elektronik', currentStock: 18, dailyAvgSales: 6.5, leadTimeDays: 4 },
+      { sku: 'ELK-9014', name: 'Type-C Hızlı Şarj Adaptörü 65W', category: 'Elektronik', currentStock: 12, dailyAvgSales: 4.0, leadTimeDays: 5 },
+      { sku: 'EV-3310', name: 'Filtre Kahve Çekirdeği 1000g', category: 'Gıda & İçecek', currentStock: 45, dailyAvgSales: 5.0, leadTimeDays: 7 },
+      { sku: 'OFS-1102', name: 'A4 Fotokopi Kağıdı 80g (Koli)', category: 'Ofis & Kırtasiye', currentStock: 14, dailyAvgSales: 3.5, leadTimeDays: 4 },
+      { sku: 'ELK-4429', name: 'Mekanik Klavye RGB - Red Switch', category: 'Elektronik', currentStock: 35, dailyAvgSales: 2.2, leadTimeDays: 10 },
+      { sku: 'EV-7721', name: 'Termo Paslanmaz Çelik Matara 750ml', category: 'Ev & Yaşam', currentStock: 9, dailyAvgSales: 3.0, leadTimeDays: 5 },
+      { sku: 'GYM-5520', name: 'Dri-Fit Spor Tişört - Nefes Alabilir', category: 'Giyim & Spor', currentStock: 28, dailyAvgSales: 2.0, leadTimeDays: 6 },
+      { sku: 'OFS-6634', name: 'Jel Mürekkepli Roller İmza Kalemi 0.5mm', category: 'Ofis & Kırtasiye', currentStock: 80, dailyAvgSales: 4.2, leadTimeDays: 7 },
+      { sku: 'GDA-2291', name: 'Doğal Soğuk Sıkım Zeytinyağı 5L', category: 'Gıda & İçecek', currentStock: 8, dailyAvgSales: 2.5, leadTimeDays: 4 },
+      { sku: 'EV-8840', name: 'Akıllı Nemlendirici & Aroma Difüzörü', category: 'Ev & Yaşam', currentStock: 6, dailyAvgSales: 1.8, leadTimeDays: 7 },
+      { sku: 'ELK-1050', name: 'Bluetooth Kulak İçi Kulaklık ANC', category: 'Elektronik', currentStock: 52, dailyAvgSales: 3.2, leadTimeDays: 8 },
+      // KURAL 3: Mevcut stoğu 0 olan veya günlük ortalama satışı 0 olan ürünler KESİNLİKLE dahil edilmemelidir.
+      // Bu 2 örnek ürün kural gereği iş mantığı filtresiyle KESİNLİKLE listeye dahil edilmeyecektir:
+      { sku: 'PAS-0001', name: 'Stoksuz Test Ürünü (Dahil Edilmez)', category: 'Elektronik', currentStock: 0, dailyAvgSales: 4.0, leadTimeDays: 5 },
+      { sku: 'PAS-0002', name: 'Hareketsiz Test Ürünü (Dahil Edilmez)', category: 'Ev & Yaşam', currentStock: 20, dailyAvgSales: 0, leadTimeDays: 6 }
+    ];
+
+    // 3. Filtreleme Mantığı (Kritik): Mevcut stoğu 0 olan veya günlük satışı 0 olan ürünler KESİNLİKLE hariç tutulur.
+    const activeProducts = rawProducts.filter(item => item.currentStock > 0 && item.dailyAvgSales > 0);
+
+    // 4 & 5. Hesaplama Formülü ve Kritik Eşik Tespiti
+    const processedProducts = activeProducts.map(item => {
+      // Formül: Kalan Gün = Mevcut Stok / Günlük Ortalama Satış (1 basamak yuvarlama)
+      const exactDays = item.currentStock / item.dailyAvgSales;
+      const remainingDays = Math.round(exactDays * 10) / 10;
+      
+      // Eşik: Kalan Gün <= Tedarik Süresi ise KRİTİK, aksi halde GÜVENLİ
+      const isCritical = remainingDays <= item.leadTimeDays;
+      const status = isCritical ? '🔴 KRİTİK (Sipariş Ver)' : '🟢 GÜVENLİ';
+
+      return {
+        ...item,
+        remainingDays,
+        isCritical,
+        status
+      };
+    });
+
+    // 6. Sıralama: Varsayılan olarak "Kalan Gün" değerine göre küçükten büyüğe (ASC) sıralama
+    processedProducts.sort((a, b) => a.remainingDays - b.remainingDays);
+
+    // Filtre State
+    let state = {
+      searchQuery: '',
+      selectedCategory: 'ALL',
+      onlyUrgent: false
+    };
+
+    // DOM Elementleri
+    const tableBody = document.getElementById('product-table-body');
+    const searchInput = document.getElementById('search-input');
+    const categorySelect = document.getElementById('category-select');
+    const urgentToggle = document.getElementById('urgent-filter-toggle');
+    const urgentChip = document.getElementById('urgent-count-chip');
+    const kpiCritical = document.getElementById('kpi-critical');
+    const kpiSafe = document.getElementById('kpi-safe');
+    const kpiTotal = document.getElementById('kpi-total');
+    const tableBadgeCount = document.getElementById('table-badge-count');
+    const emptyState = document.getElementById('empty-state');
+    const resetFiltersBtn = document.getElementById('reset-filters-btn');
+    const toastContainer = document.getElementById('toast-container');
+
+    // Kategorileri Doldur
+    const categories = Array.from(new Set(processedProducts.map(p => p.category))).sort();
+    categories.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      categorySelect.appendChild(opt);
+    });
+
+    // KPI Güncellemesi
+    function updateKPIs() {
+      const criticalCount = processedProducts.filter(p => p.isCritical).length;
+      const safeCount = processedProducts.filter(p => !p.isCritical).length;
+      const totalCount = processedProducts.length;
+
+      kpiCritical.textContent = criticalCount;
+      kpiSafe.textContent = safeCount;
+      kpiTotal.textContent = totalCount;
+      urgentChip.textContent = criticalCount;
+    }
+
+    // Toast Bildirimi
+    function showToast(product) {
+      const toast = document.createElement('div');
+      toast.className = 'pointer-events-auto bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center justify-between gap-4 max-w-sm transition transform translate-y-2 opacity-0';
+      toast.innerHTML = `
+        <div class="flex items-center gap-3">
+          <span class="text-xl">🛒</span>
+          <div>
+            <p class="text-xs font-semibold text-amber-400">Sipariş Talebi Gönderildi</p>
+            <p class="text-xs text-slate-200 font-medium">${product.name} (${product.sku})</p>
+            <p class="text-[11px] text-slate-400">Tedarikçi siparişi başarıyla oluşturuldu.</p>
+          </div>
+        </div>
+        <button class="text-slate-400 hover:text-white text-sm font-bold ml-2" onclick="this.parentElement.remove()">&times;</button>
+      `;
+      toastContainer.appendChild(toast);
+
+      // Animation in
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      // Auto dismiss after 4 seconds
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Tabloyu Çizme
+    function renderTable() {
+      const q = state.searchQuery.toLowerCase().trim();
+      
+      const filtered = processedProducts.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
+        const matchesCategory = state.selectedCategory === 'ALL' || p.category === state.selectedCategory;
+        const matchesUrgent = !state.onlyUrgent || p.isCritical;
+        return matchesSearch && matchesCategory && matchesUrgent;
+      });
+
+      tableBadgeCount.textContent = `(${filtered.length} ürün listeleniyor)`;
+      tableBody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      filtered.forEach(item => {
+        const tr = document.createElement('tr');
+        
+        // 5. Kritik Eşik (Threshold) Görsel Vurgusu:
+        // Kalan Gün <= Tedarik Süresi ise satır hafif kırmızımsı vurgulu.
+        // Kalan Gün > Tedarik Süresi ise satır standart/yeşilimsi vurgulu.
+        if (item.isCritical) {
+          tr.className = 'bg-red-50/60 hover:bg-red-100/50 border-l-4 border-l-red-500 transition-colors duration-150';
+        } else {
+          tr.className = 'bg-emerald-50/30 hover:bg-emerald-100/40 border-l-4 border-l-emerald-500 transition-colors duration-150';
+        }
+
+        tr.innerHTML = `
+          <td class="py-3.5 px-4 font-mono font-medium text-xs text-slate-600">${item.sku}</td>
+          <td class="py-3.5 px-4 font-semibold text-slate-800">${item.name}</td>
+          <td class="py-3.5 px-4">
+            <span class="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+              ${item.category}
+            </span>
+          </td>
+          <td class="py-3.5 px-4 text-right font-medium text-slate-700">${item.currentStock} adet</td>
+          <td class="py-3.5 px-4 text-right text-slate-600 font-medium">${item.dailyAvgSales} / gün</td>
+          <td class="py-3.5 px-4 text-right text-slate-600 font-medium">${item.leadTimeDays} gün</td>
+          <td class="py-3.5 px-4 text-right">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold ${
+              item.isCritical ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+            }">
+              ${item.remainingDays.toFixed(1)} gün
+            </span>
+          </td>
+          <td class="py-3.5 px-4 text-center">
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+              item.isCritical ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+            }">
+              ${item.status}
+            </span>
+          </td>
+          <td class="py-3.5 px-4 text-center">
+            <button
+              class="action-order-btn px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm transition active:scale-95 ${
+                item.isCritical 
+                  ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-400' 
+                  : 'bg-slate-800 text-white hover:bg-slate-900 focus:ring-2 focus:ring-slate-400'
+              }"
+              data-sku="${item.sku}"
+            >
+              Sipariş Ver
+            </button>
+          </td>
+        `;
+
+        tableBody.appendChild(tr);
+      });
+
+      // Event delegation for action buttons
+      document.querySelectorAll('.action-order-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const sku = e.target.getAttribute('data-sku');
+          const product = processedProducts.find(p => p.sku === sku);
+          if (product) {
+            showToast(product);
+          }
+        });
+      });
+    }
+
+    // Event Listener'lar
+    searchInput.addEventListener('input', (e) => {
+      state.searchQuery = e.target.value;
+      renderTable();
+    });
+
+    categorySelect.addEventListener('change', (e) => {
+      state.selectedCategory = e.target.value;
+      renderTable();
+    });
+
+    urgentToggle.addEventListener('change', (e) => {
+      state.onlyUrgent = e.target.checked;
+      renderTable();
+    });
+
+    resetFiltersBtn.addEventListener('click', () => {
+      state.searchQuery = '';
+      state.selectedCategory = 'ALL';
+      state.onlyUrgent = false;
+      searchInput.value = '';
+      categorySelect.value = 'ALL';
+      urgentToggle.checked = false;
+      renderTable();
+    });
+
+    // Başlangıç Çalıştırması
+    updateKPIs();
+    renderTable();
+  </script>
+</body>
+</html>
